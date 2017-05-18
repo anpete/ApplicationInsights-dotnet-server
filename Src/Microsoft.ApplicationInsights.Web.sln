@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.0
+VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web.Net45", "Web\Web.Net45\Web.Net45.csproj", "{FE97E6BB-7C7E-4503-AF35-EBBBEDEB850A}"
 EndProject
@@ -123,8 +123,6 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Common", "Common\Common.shproj", "{CCAB7A34-8DC5-4A6F-B637-46CEBA93C687}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Filtering.Shared", "PerformanceCollector\Filtering\Filtering.Shared.shproj", "{4E5E951A-7E77-45B3-8041-026CBAD3693B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyCollector.Net46.Tests", "DependencyCollector\Net46.Tests\DependencyCollector.Net46.Tests.csproj", "{FB1B1F48-9107-4A45-8868-213D5C8DF20B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyCollector.NetCore.Tests", "DependencyCollector\NetCore.Tests\DependencyCollector.NetCore.Tests.csproj", "{D831194B-6283-4F53-B351-D9C72FC03629}"
 EndProject
@@ -378,14 +376,6 @@ Global
 		{C6B569BC-6F19-42C9-A951-DA611BB0F4BE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C6B569BC-6F19-42C9-A951-DA611BB0F4BE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C6B569BC-6F19-42C9-A951-DA611BB0F4BE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D831194B-6283-4F53-B351-D9C72FC03629}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D831194B-6283-4F53-B351-D9C72FC03629}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D831194B-6283-4F53-B351-D9C72FC03629}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -434,7 +424,6 @@ Global
 		{F254D4FB-428D-408E-8251-39BCA7B4B5CE} = {A318CC6C-51C8-4BD6-BC85-2B4F35123BE7}
 		{C6B569BC-6F19-42C9-A951-DA611BB0F4BE} = {A318CC6C-51C8-4BD6-BC85-2B4F35123BE7}
 		{4E5E951A-7E77-45B3-8041-026CBAD3693B} = {A318CC6C-51C8-4BD6-BC85-2B4F35123BE7}
-		{FB1B1F48-9107-4A45-8868-213D5C8DF20B} = {DF56FBAD-8745-404B-94A1-E83BFC4AD7CB}
 		{D831194B-6283-4F53-B351-D9C72FC03629} = {DF56FBAD-8745-404B-94A1-E83BFC4AD7CB}
 	EndGlobalSection
 EndGlobal
