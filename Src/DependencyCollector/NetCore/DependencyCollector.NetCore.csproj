@@ -52,7 +52,7 @@
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.4.0-beta3" />
     <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.0-preview2-25317-01" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.5.0-preview2-25319-04" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
   </ItemGroup>
 </Project>
