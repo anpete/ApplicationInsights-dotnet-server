@@ -31,12 +31,13 @@
 
 #if NET45 || NETCORE
         private HttpCoreDiagnosticSourceListener httpCoreDiagnosticSourceListener;
+        private SqlClientDiagnosticSourceListener sqlClientDiagnosticSourceListener;
 #endif
 
 #if !NETCORE
         private ProfilerSqlCommandProcessing sqlCommandProcessing;
         private ProfilerSqlConnectionProcessing sqlConnectionProcessing;
-        private ProfilerHttpProcessing httpProcessing;        
+        private ProfilerHttpProcessing httpProcessing;
 #endif
         private TelemetryConfiguration telemetryConfiguration;
         private bool isInitialized = false;
@@ -134,6 +135,8 @@
                                 this.SetComponentCorrelationHttpHeaders,
                                 this.ExcludeComponentCorrelationHttpHeadersOnDomains, 
                                 null);
+
+                            this.sqlClientDiagnosticSourceListener = new SqlClientDiagnosticSourceListener(configuration);
 #endif
                         }
                         catch (Exception exc)
@@ -220,6 +223,11 @@
                     {
                         this.httpCoreDiagnosticSourceListener.Dispose();
                     }
+
+                    if (this.sqlClientDiagnosticSourceListener != null)
+                    {
+                        this.sqlClientDiagnosticSourceListener.Dispose();
+                    }
 #endif
                 }
 
@@ -295,7 +303,7 @@
             }
             else
             {
-                // if profiler is not attached then default to diagnositics and framework event source
+                // if profiler is not attached then default to diagnostics and framework event source
                 this.InitializeForDiagnosticAndFrameworkEventSource();
 
                 // Log a message to indicate the profiler is not attached
