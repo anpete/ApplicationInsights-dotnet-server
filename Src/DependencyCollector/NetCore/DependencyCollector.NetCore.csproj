@@ -40,6 +40,7 @@
     <Compile Include="..\Shared\Implementation\RemoteDependencyConstants.cs" Link="RemoteDependencyConstants.cs" />
     <Compile Include="..\Shared\Implementation\HttpCoreDiagnosticSourceListener.cs" Link="HttpCoreDiagnosticSourceListener.cs" />
     <Compile Include="..\Shared\Implementation\SqlClientDiagnosticSourceListener.cs" Link="SqlClientDiagnosticSourceListener.cs" />
+    <Compile Include="..\Shared\Implementation\EntityFrameworkCoreDiagnosticSourceListener.cs" Link="EntityFrameworkCoreDiagnosticSourceListener.cs" />
     <Compile Include="..\Shared\Implementation\HttpHeadersUtilities.cs" Link="HttpHeadersUtilities.cs" />
     <Compile Include="..\Shared\Implementation\PropertyFetcher.cs" Link="PropertyFetcher.cs" />
     <Compile Include="..\Shared\Implementation\RDDSource.cs" Link="RDDSource.cs" />

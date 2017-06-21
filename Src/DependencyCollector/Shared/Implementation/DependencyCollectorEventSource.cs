@@ -407,6 +407,26 @@
             this.WriteEvent(38, id, name, this.ApplicationName);
         }
 
+        [Event(
+            39,
+            Keywords = Keywords.RddEventKeywords,
+            Message = "EntityFrameworkCoreDiagnosticSubscriber failed to subscribe. Error details '{0}'",
+            Level = EventLevel.Error)]
+        public void EntityFrameworkCoreDiagnosticSubscriberFailedToSubscribe(string error, string appDomainName = "Incorrect")
+        {
+            this.WriteEvent(39, error, this.ApplicationName);
+        }
+
+        [Event(
+            40,
+            Keywords = Keywords.RddEventKeywords,
+            Message = "EntityFrameworkCoreDiagnosticSubscriber: Callback called for id = '{0}', name= '{1}'",
+            Level = EventLevel.Verbose)]
+        public void EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(Guid id, string name)
+        {
+            this.WriteEvent(40, id, name, this.ApplicationName);
+        }
+
         [NonEvent]
         private string GetApplicationName()
         {

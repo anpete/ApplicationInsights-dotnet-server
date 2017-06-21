@@ -88,7 +88,7 @@ namespace Microsoft.ApplicationInsights
 
             var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
 
-            Assert.AreEqual(afterExecuteEventData.OperationId.ToString(), dependencyTelemetry.Id);
+            Assert.AreEqual(afterExecuteEventData.OperationId.ToString("N"), dependencyTelemetry.Id);
             Assert.AreEqual(sqlCommand.CommandText, dependencyTelemetry.Data);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Name);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
@@ -173,7 +173,7 @@ namespace Microsoft.ApplicationInsights
 
             var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
 
-            Assert.AreEqual(afterOpenEventData.OperationId.ToString(), dependencyTelemetry.Id);
+            Assert.AreEqual(afterOpenEventData.OperationId.ToString("N"), dependencyTelemetry.Id);
             Assert.AreEqual(afterOpenEventData.Operation, dependencyTelemetry.Data);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | " + afterOpenEventData.Operation, dependencyTelemetry.Name);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
@@ -256,7 +256,7 @@ namespace Microsoft.ApplicationInsights
 
             var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
 
-            Assert.AreEqual(afterCloseEventData.OperationId.ToString(), dependencyTelemetry.Id);
+            Assert.AreEqual(afterCloseEventData.OperationId.ToString("N"), dependencyTelemetry.Id);
             Assert.AreEqual(afterCloseEventData.Operation, dependencyTelemetry.Data);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | " + afterCloseEventData.Operation, dependencyTelemetry.Name);
             Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
@@ -338,7 +338,7 @@ namespace Microsoft.ApplicationInsights
 
             var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
 
-            Assert.AreEqual(afterCommitEventData.OperationId.ToString(), dependencyTelemetry.Id);
+            Assert.AreEqual(afterCommitEventData.OperationId.ToString("N"), dependencyTelemetry.Id);
             Assert.AreEqual(afterCommitEventData.Operation, dependencyTelemetry.Data);
             Assert.AreEqual(
                 "(localdb)\\MSSQLLocalDB | master | " + afterCommitEventData.Operation + " | " + afterCommitEventData.IsolationLevel, 
@@ -422,7 +422,7 @@ namespace Microsoft.ApplicationInsights
 
             var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
 
-            Assert.AreEqual(afterRollbackEventData.OperationId.ToString(), dependencyTelemetry.Id);
+            Assert.AreEqual(afterRollbackEventData.OperationId.ToString("N"), dependencyTelemetry.Id);
             Assert.AreEqual(afterRollbackEventData.Operation, dependencyTelemetry.Data);
             Assert.AreEqual(
                 "(localdb)\\MSSQLLocalDB | master | " + afterRollbackEventData.Operation + " | " + afterRollbackEventData.IsolationLevel,

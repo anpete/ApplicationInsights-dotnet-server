@@ -32,6 +32,7 @@
 #if NET45 || NETCORE
         private HttpCoreDiagnosticSourceListener httpCoreDiagnosticSourceListener;
         private SqlClientDiagnosticSourceListener sqlClientDiagnosticSourceListener;
+        private EntityFrameworkCoreDiagnosticSourceListener entityFrameworkCoreDiagnosticSourceListener;
 #endif
 
 #if !NETCORE
@@ -137,6 +138,7 @@
                                 null);
 
                             this.sqlClientDiagnosticSourceListener = new SqlClientDiagnosticSourceListener(configuration);
+                            this.entityFrameworkCoreDiagnosticSourceListener = new EntityFrameworkCoreDiagnosticSourceListener(configuration);
 #endif
                         }
                         catch (Exception exc)
@@ -168,7 +170,7 @@
                 ? AppDomain.CurrentDomain.BaseDirectory
                 : AppDomain.CurrentDomain.RelativeSearchPath;
 
-            DependencyCollectorEventSource.Log.RemoteDependencyModuleInformation("extesionBaseDirectrory is " + extensionBaseDirectory);
+            DependencyCollectorEventSource.Log.RemoteDependencyModuleInformation("extensionBaseDirectrory is " + extensionBaseDirectory);
             Decorator.InitializeExtension(extensionBaseDirectory);
 
             // obtain agent version
@@ -227,6 +229,11 @@
                     if (this.sqlClientDiagnosticSourceListener != null)
                     {
                         this.sqlClientDiagnosticSourceListener.Dispose();
+                    }
+
+                    if (this.entityFrameworkCoreDiagnosticSourceListener != null)
+                    {
+                        this.entityFrameworkCoreDiagnosticSourceListener.Dispose();
                     }
 #endif
                 }
