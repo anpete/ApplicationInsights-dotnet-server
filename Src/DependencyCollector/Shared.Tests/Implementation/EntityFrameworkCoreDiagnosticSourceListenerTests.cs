@@ -13,6 +13,7 @@ namespace Microsoft.ApplicationInsights
     using Microsoft.ApplicationInsights.DependencyCollector.Implementation;
     using Microsoft.ApplicationInsights.DependencyCollector;
     using System.Data;
+    using System.Data.Common;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -59,9 +60,7 @@ namespace Microsoft.ApplicationInsights
             var sqlConnection = new SqlConnection(TestConnectionString);
             var sqlCommand = sqlConnection.CreateCommand();
             sqlCommand.CommandText = "select * from orders";
-            
-            var now = DateTimeOffset.UtcNow;
-            
+
             var commandExecutedEventData = new
             {
                 CommandId = commandId,
@@ -69,7 +68,7 @@ namespace Microsoft.ApplicationInsights
                 ConnectionId = sqlConnection.ClientConnectionId,
                 Command = sqlCommand,
                 IsAsync = true,
-                StartTime = now,
+                StartTime = DateTimeOffset.UtcNow,
                 Duration = TimeSpan.FromMilliseconds(50)
             };
 
@@ -89,341 +88,238 @@ namespace Microsoft.ApplicationInsights
             Assert.AreEqual(commandExecutedEventData.Duration, dependencyTelemetry.Duration);
         }
         
-//        [TestMethod]
-//        public void TracksCommandError()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//            var sqlCommand = sqlConnection.CreateCommand();
-//            sqlCommand.CommandText = "select * from orders";
-//
-//            var beforeExecuteEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeExecuteCommand,
-//                beforeExecuteEventData);
-//
-//            var commandErrorEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "ExecuteReader",
-//                ConnectionId = sqlConnection.ClientConnectionId,
-//                Command = sqlCommand,
-//                Exception = new Exception("Boom!"),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlErrorExecuteCommand,
-//                commandErrorEventData);
-//
-//            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
-//
-//            Assert.AreSame(commandErrorEventData.Exception, exceptionTelemetry.Exception);
-//            Assert.AreEqual(commandErrorEventData.Exception.Message, exceptionTelemetry.Message);
-//            Assert.IsTrue(exceptionTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksConnectionOpened()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeOpenConnection,
-//                beforeOpenEventData);
-//
-//            var afterOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Open",
-//                ConnectionId = sqlConnection.ClientConnectionId,
-//                Connection = sqlConnection,
-//                Statistics = sqlConnection.RetrieveStatistics(),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//            
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlAfterOpenConnection,
-//                afterOpenEventData);
-//
-//            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
-//
-//            Assert.AreEqual(afterOpenEventData.OperationId.ToString(), dependencyTelemetry.Id);
-//            Assert.AreEqual(afterOpenEventData.Operation, dependencyTelemetry.Data);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | " + afterOpenEventData.Operation, dependencyTelemetry.Name);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
-//            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
-//            Assert.IsTrue((bool)dependencyTelemetry.Success);
-//            Assert.AreEqual(1000000L, dependencyTelemetry.Duration.Ticks);
-//            Assert.IsTrue(dependencyTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//        
-//        [TestMethod]
-//        public void TracksConnectionOpenedError()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//            
-//            var beforeOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeOpenConnection,
-//                beforeOpenEventData);
-//
-//            var errorOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Open",
-//                ConnectionId = sqlConnection.ClientConnectionId,
-//                Connection = sqlConnection,
-//                Exception = new Exception("Boom!"),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlErrorOpenConnection,
-//                errorOpenEventData);
-//
-//            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
-//
-//            Assert.AreSame(errorOpenEventData.Exception, exceptionTelemetry.Exception);
-//            Assert.AreEqual(errorOpenEventData.Exception.Message, exceptionTelemetry.Message);
-//            Assert.IsTrue(exceptionTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksConnectionClosed()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeCloseEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeCloseConnection,
-//                beforeCloseEventData);
-//
-//            var afterCloseEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Close",
-//                ConnectionId = sqlConnection.ClientConnectionId,
-//                Connection = sqlConnection,
-//                Statistics = sqlConnection.RetrieveStatistics(),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlAfterCloseConnection,
-//                afterCloseEventData);
-//
-//            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
-//
-//            Assert.AreEqual(afterCloseEventData.OperationId.ToString(), dependencyTelemetry.Id);
-//            Assert.AreEqual(afterCloseEventData.Operation, dependencyTelemetry.Data);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | " + afterCloseEventData.Operation, dependencyTelemetry.Name);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
-//            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
-//            Assert.IsTrue((bool)dependencyTelemetry.Success);
-//            Assert.AreEqual(1000000L, dependencyTelemetry.Duration.Ticks);
-//            Assert.IsTrue(dependencyTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksConnectionCloseError()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeCloseConnection,
-//                beforeOpenEventData);
-//
-//            var errorOpenEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Close",
-//                ConnectionId = sqlConnection.ClientConnectionId,
-//                Connection = sqlConnection,
-//                Exception = new Exception("Boom!"),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlErrorCloseConnection,
-//                errorOpenEventData);
-//
-//            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
-//
-//            Assert.AreSame(errorOpenEventData.Exception, exceptionTelemetry.Exception);
-//            Assert.AreEqual(errorOpenEventData.Exception.Message, exceptionTelemetry.Message);
-//            Assert.IsTrue(exceptionTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksTransactionCommitted()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeCommitEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeCommitTransaction,
-//                beforeCommitEventData);
-//
-//            var afterCommitEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Commit",
-//                IsolationLevel = IsolationLevel.Snapshot,
-//                Connection = sqlConnection,
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlAfterCommitTransaction,
-//                afterCommitEventData);
-//
-//            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
-//
-//            Assert.AreEqual(afterCommitEventData.OperationId.ToString(), dependencyTelemetry.Id);
-//            Assert.AreEqual(afterCommitEventData.Operation, dependencyTelemetry.Data);
-//            Assert.AreEqual(
-//                "(localdb)\\MSSQLLocalDB | master | " + afterCommitEventData.Operation + " | " + afterCommitEventData.IsolationLevel, 
-//                dependencyTelemetry.Name);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
-//            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
-//            Assert.IsTrue((bool)dependencyTelemetry.Success);
-//            Assert.AreEqual(1000000L, dependencyTelemetry.Duration.Ticks);
-//            Assert.IsTrue(dependencyTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksTransactionCommitError()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeCommitEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeCommitTransaction,
-//                beforeCommitEventData);
-//
-//            var errorCommitEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Commit",
-//                IsolationLevel = IsolationLevel.Snapshot,
-//                Connection = sqlConnection,
-//                Exception = new Exception("Boom!"),
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlErrorCommitTransaction,
-//                errorCommitEventData);
-//
-//            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
-//
-//            Assert.AreSame(errorCommitEventData.Exception, exceptionTelemetry.Exception);
-//            Assert.AreEqual(errorCommitEventData.Exception.Message, exceptionTelemetry.Message);
-//            Assert.IsTrue(exceptionTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
-//
-//        [TestMethod]
-//        public void TracksTransactionRolledBack()
-//        {
-//            var operationId = Guid.NewGuid();
-//            var sqlConnection = new SqlConnection(TestConnectionString);
-//
-//            var beforeRollbackEventData = new
-//            {
-//                OperationId = operationId,
-//                Timestamp = 1000000L
-//            };
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlBeforeRollbackTransaction,
-//                beforeRollbackEventData);
-//
-//            var afterRollbackEventData = new
-//            {
-//                OperationId = operationId,
-//                Operation = "Rollback",
-//                IsolationLevel = IsolationLevel.Snapshot,
-//                Connection = sqlConnection,
-//                Timestamp = 2000000L
-//            };
-//
-//            var now = DateTimeOffset.UtcNow;
-//
-//            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
-//                EntityFrameworkCoreDiagnosticSourceListener.SqlAfterRollbackTransaction,
-//                afterRollbackEventData);
-//
-//            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
-//
-//            Assert.AreEqual(afterRollbackEventData.OperationId.ToString(), dependencyTelemetry.Id);
-//            Assert.AreEqual(afterRollbackEventData.Operation, dependencyTelemetry.Data);
-//            Assert.AreEqual(
-//                "(localdb)\\MSSQLLocalDB | master | " + afterRollbackEventData.Operation + " | " + afterRollbackEventData.IsolationLevel,
-//                dependencyTelemetry.Name);
-//            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
-//            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
-//            Assert.IsTrue((bool)dependencyTelemetry.Success);
-//            Assert.AreEqual(1000000L, dependencyTelemetry.Duration.Ticks);
-//            Assert.IsTrue(dependencyTelemetry.Timestamp.Ticks < now.Ticks);
-//        }
+        [TestMethod]
+        public void TracksCommandError()
+        {
+            var commandId = Guid.NewGuid();
+            var sqlConnection = new SqlConnection(TestConnectionString);
+            var sqlCommand = sqlConnection.CreateCommand();
+            sqlCommand.CommandText = "select * from orders";
+
+            var commandErrorEventData = new
+            {
+                CommandId = commandId,
+                ExecuteMethod = DbCommandMethod.ExecuteReader,
+                ConnectionId = sqlConnection.ClientConnectionId,
+                Command = sqlCommand,
+                Exception = new Exception("Boom!"),
+                StartTime = DateTimeOffset.UtcNow
+            };
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.CommandErrorEventId,
+                commandErrorEventData);
+
+            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
+
+            Assert.AreSame(commandErrorEventData.Exception, exceptionTelemetry.Exception);
+            Assert.AreEqual(commandErrorEventData.Exception.Message, exceptionTelemetry.Message);
+            Assert.AreEqual(commandErrorEventData.StartTime, exceptionTelemetry.Timestamp);
+        }
+
+        [TestMethod]
+        public void TracksConnectionOpened()
+        {
+            var sqlConnection = new SqlConnection(TestConnectionString);
+
+            var connectionEndEventData = new
+            {
+                ConnectionId = sqlConnection.ClientConnectionId,
+                Connection = sqlConnection,
+                IsAsync = true,
+                StartTime = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromMilliseconds(50)
+            };
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.ConnectionOpenedEventId,
+                connectionEndEventData);
+
+            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+
+            Assert.AreEqual(connectionEndEventData.ConnectionId.ToString("N"), dependencyTelemetry.Id);
+            Assert.AreEqual("Open", dependencyTelemetry.Data);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | Open", dependencyTelemetry.Name);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
+            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
+            Assert.IsTrue((bool)dependencyTelemetry.Success);
+            Assert.AreEqual(connectionEndEventData.StartTime, dependencyTelemetry.Timestamp);
+            Assert.AreEqual(connectionEndEventData.Duration, dependencyTelemetry.Duration);
+        }
+
+        [TestMethod]
+        public void TracksConnectionClosed()
+        {
+            var operationId = Guid.NewGuid();
+            var sqlConnection = new SqlConnection(TestConnectionString);
+            
+            var connectionEndEventData = new
+            {
+                ConnectionId = sqlConnection.ClientConnectionId,
+                Connection = sqlConnection,
+                IsAsync = true,
+                StartTime = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromMilliseconds(50)
+            };
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.ConnectionClosedEventId,
+                connectionEndEventData);
+
+            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+
+            Assert.AreEqual(connectionEndEventData.ConnectionId.ToString("N"), dependencyTelemetry.Id);
+            Assert.AreEqual("Close", dependencyTelemetry.Data);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master | Close", dependencyTelemetry.Name);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
+            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
+            Assert.IsTrue((bool)dependencyTelemetry.Success);
+            Assert.AreEqual(connectionEndEventData.StartTime, dependencyTelemetry.Timestamp);
+            Assert.AreEqual(connectionEndEventData.Duration, dependencyTelemetry.Duration);
+        }
+
+        [TestMethod]
+        public void TracksConnectionError()
+        {
+            var sqlConnection = new SqlConnection(TestConnectionString);
+            
+            var errorOpenEventData = new
+            {
+                ConnectionId = sqlConnection.ClientConnectionId,
+                Connection = sqlConnection,
+                Exception = new Exception("Boom!"),
+                StartTime = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromMilliseconds(50)
+            };
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.ConnectionErrorEventId,
+                errorOpenEventData);
+
+            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
+
+            Assert.AreSame(errorOpenEventData.Exception, exceptionTelemetry.Exception);
+            Assert.AreEqual(errorOpenEventData.Exception.Message, exceptionTelemetry.Message);
+            Assert.AreEqual(errorOpenEventData.StartTime, exceptionTelemetry.Timestamp);
+        }
+
+        private class FakeTransaction : DbTransaction
+        {
+            private DbConnection connection;
+
+            public FakeTransaction(DbConnection connection)
+            {
+                this.connection = connection;
+            }
+
+            public override IsolationLevel IsolationLevel => default(IsolationLevel);
+
+            protected override DbConnection DbConnection => connection;
+
+            public override void Commit()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void Rollback()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [TestMethod]
+        public void TracksTransactionCommitted()
+        {
+            var transactionId = Guid.NewGuid();
+            var sqlConnection = new SqlConnection(TestConnectionString);
+
+            var transactionEndEventData = new
+            {
+                TransactionId = transactionId,
+                Transaction = new FakeTransaction(sqlConnection),
+                StartTime = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromMilliseconds(50)
+            };
+
+            var now = DateTimeOffset.UtcNow;
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.TransactionCommittedEventId,
+                transactionEndEventData);
+
+            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+
+            Assert.AreEqual(transactionEndEventData.TransactionId.ToString("N"), dependencyTelemetry.Id);
+            Assert.AreEqual("Commit", dependencyTelemetry.Data);
+            Assert.AreEqual(
+                "(localdb)\\MSSQLLocalDB | master | Commit | " + transactionEndEventData.Transaction.IsolationLevel, 
+                dependencyTelemetry.Name);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
+            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
+            Assert.IsTrue((bool)dependencyTelemetry.Success);
+            Assert.AreEqual(transactionEndEventData.StartTime, dependencyTelemetry.Timestamp);
+            Assert.AreEqual(transactionEndEventData.Duration, dependencyTelemetry.Duration);
+        }
+
+        [TestMethod]
+        public void TracksTransactionRolledBack()
+        {
+            var transactionId = Guid.NewGuid();
+            var sqlConnection = new SqlConnection(TestConnectionString);
+
+            var transactionEndEventData = new
+            {
+                TransactionId = transactionId,
+                Transaction = new FakeTransaction(sqlConnection),
+                StartTime = DateTimeOffset.UtcNow,
+                Duration = TimeSpan.FromMilliseconds(50)
+            };
+
+            var now = DateTimeOffset.UtcNow;
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.TransactionRolledBackEventId,
+                transactionEndEventData);
+
+            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+
+            Assert.AreEqual(transactionEndEventData.TransactionId.ToString("N"), dependencyTelemetry.Id);
+            Assert.AreEqual("Rollback", dependencyTelemetry.Data);
+            Assert.AreEqual(
+                "(localdb)\\MSSQLLocalDB | master | Rollback | " + transactionEndEventData.Transaction.IsolationLevel, 
+                dependencyTelemetry.Name);
+            Assert.AreEqual("(localdb)\\MSSQLLocalDB | master", dependencyTelemetry.Target);
+            Assert.AreEqual(RemoteDependencyConstants.SQL, dependencyTelemetry.Type);
+            Assert.IsTrue((bool)dependencyTelemetry.Success);
+            Assert.AreEqual(transactionEndEventData.StartTime, dependencyTelemetry.Timestamp);
+            Assert.AreEqual(transactionEndEventData.Duration, dependencyTelemetry.Duration);
+        }
+
+        [TestMethod]
+        public void TracksTransactionError()
+        {
+            var transactionId = Guid.NewGuid();
+            var sqlConnection = new SqlConnection(TestConnectionString);
+
+            var transactionErrorEventData = new
+            {
+                TransactionId = transactionId,
+                Exception = new Exception("Boom!"),
+                StartTime = DateTimeOffset.UtcNow
+            };
+
+            var now = DateTimeOffset.UtcNow;
+
+            this.fakeEntityFrameworkCoreClientDiagnosticSource.Write(
+                EntityFrameworkCoreDiagnosticSourceListener.TransactionErrorEventId,
+                transactionErrorEventData);
+
+            var exceptionTelemetry = (ExceptionTelemetry)this.sendItems.Single();
+
+            Assert.AreSame(transactionErrorEventData.Exception, exceptionTelemetry.Exception);
+            Assert.AreEqual(transactionErrorEventData.Exception.Message, exceptionTelemetry.Message);
+            Assert.AreEqual(transactionErrorEventData.StartTime, exceptionTelemetry.Timestamp);
+        }
 
         private enum DbCommandMethod
         {

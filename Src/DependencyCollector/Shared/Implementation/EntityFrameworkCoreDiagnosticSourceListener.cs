@@ -1,11 +1,8 @@
 namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
 {
     using System;
-    using System.Collections;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Data;
-    using System.Data.SqlClient;
     using System.Diagnostics;
     using Microsoft.ApplicationInsights.Channel;
     using Microsoft.ApplicationInsights.DataContracts;
@@ -23,17 +20,13 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
         public const string CommandExecutedEventId = EntityFrameworkCorePrefix + "Command.CommandExecuted";
         public const string CommandErrorEventId = EntityFrameworkCorePrefix + "Command.CommandError";
         
-        public const string SqlAfterOpenConnection = EntityFrameworkCorePrefix + "WriteConnectionOpenAfter";
-        public const string SqlErrorOpenConnection = EntityFrameworkCorePrefix + "WriteConnectionOpenError";
-
-        public const string SqlAfterCloseConnection = EntityFrameworkCorePrefix + "WriteConnectionCloseAfter";
-        public const string SqlErrorCloseConnection = EntityFrameworkCorePrefix + "WriteConnectionCloseError";
-
-        public const string SqlAfterCommitTransaction = EntityFrameworkCorePrefix + "WriteTransactionCommitAfter";
-        public const string SqlErrorCommitTransaction = EntityFrameworkCorePrefix + "WriteTransactionCommitError";
-
-        public const string SqlAfterRollbackTransaction = EntityFrameworkCorePrefix + "WriteTransactionRollbackAfter";
-        public const string SqlErrorRollbackTransaction = EntityFrameworkCorePrefix + "WriteTransactionRollbackError";
+        public const string ConnectionOpenedEventId = EntityFrameworkCorePrefix + "Connection.ConnectionOpened";
+        public const string ConnectionClosedEventId = EntityFrameworkCorePrefix + "Connection.ConnectionClosed";
+        public const string ConnectionErrorEventId = EntityFrameworkCorePrefix + "Connection.ConnectionError";
+        
+        public const string TransactionCommittedEventId = EntityFrameworkCorePrefix + "Transaction.TransactionCommitted";
+        public const string TransactionRolledBackEventId = EntityFrameworkCorePrefix + "Transaction.TransactionRolledBack";
+        public const string TransactionErrorEventId = EntityFrameworkCorePrefix + "Transaction.TransactionError";
 
         private const string EntityFrameworkCorePrefix = "Microsoft.EntityFrameworkCore.Database.";
 
@@ -73,105 +66,122 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
                 {
                     var commandId = (Guid)CommandExecuted.CommandId.Fetch(evnt.Value);
 
-                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(commandId, evnt.Key);
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(commandId, evnt.Key);
                     
                     this.OnCommandExecutedEvent(
                         commandId,
-                        CommandExecuted.ExecuteMethod.Fetch(evnt.Value).ToString(),
-                        (Guid)CommandExecuted.ConnectionId.Fetch(evnt.Value),
-                        (SqlCommand)CommandExecuted.Command.Fetch(evnt.Value),
-                        (bool)CommandExecuted.IsAsync.Fetch(evnt.Value),
+                        (DbCommand)CommandExecuted.Command.Fetch(evnt.Value),
                         (DateTimeOffset)CommandExecuted.StartTime.Fetch(evnt.Value),
                         (TimeSpan)CommandExecuted.Duration.Fetch(evnt.Value));
 
                     break;
                 }
 
-//                case CommandErrorEventId:
-//                {
-//                    var operationId = (Guid)CommandError.OperationId.Fetch(evnt.Value);
-//
-//                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(operationId, evnt.Key);
-//                    
-//                    this.OnCommandErrorEvent(
-//                        operationId,
-//                        (string)CommandError.Operation.Fetch(evnt.Value),
-//                        (Guid)CommandError.ConnectionId.Fetch(evnt.Value),
-//                        (Exception)CommandError.Exception.Fetch(evnt.Value),
-//                        (long)CommandError.Timestamp.Fetch(evnt.Value));
-//
-//                    break;
-//                }
-//
-//                case SqlAfterOpenConnection:
-//                case SqlAfterCloseConnection:
-//                {
-//                    var operationId = (Guid)ConnectionAfter.OperationId.Fetch(evnt.Value);
-//
-//                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(operationId, evnt.Key);
-//                    
-//                    this.OnAfterConnectionEvent(
-//                        operationId,
-//                        (string)ConnectionAfter.Operation.Fetch(evnt.Value),
-//                        (Guid)ConnectionAfter.ConnectionId.Fetch(evnt.Value),
-//                        (SqlConnection)ConnectionAfter.Connection.Fetch(evnt.Value),
-//                        (IDictionary)ConnectionAfter.Statistics.Fetch(evnt.Value),
-//                        (long)ConnectionAfter.Timestamp.Fetch(evnt.Value));
-//
-//                    break;
-//                }
-//
-//                case SqlErrorOpenConnection:
-//                case SqlErrorCloseConnection:
-//                {
-//                    var operationId = (Guid)ConnectionError.OperationId.Fetch(evnt.Value);
-//
-//                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(operationId, evnt.Key);
-//                    
-//                    this.OnErrorConnectionEvent(
-//                        operationId,
-//                        (string)ConnectionError.Operation.Fetch(evnt.Value),
-//                        (Guid)ConnectionError.ConnectionId.Fetch(evnt.Value),
-//                        (Exception)ConnectionError.Exception.Fetch(evnt.Value),
-//                        (long)ConnectionError.Timestamp.Fetch(evnt.Value));
-//
-//                    break;
-//                }
-//
-//                case SqlAfterCommitTransaction:
-//                case SqlAfterRollbackTransaction:
-//                {
-//                    var operationId = (Guid)TransactionAfter.OperationId.Fetch(evnt.Value);
-//
-//                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(operationId, evnt.Key);
-//                    
-//                    this.OnAfterTransactionEvent(
-//                        operationId,
-//                        (string)TransactionAfter.Operation.Fetch(evnt.Value),
-//                        (IsolationLevel)TransactionAfter.IsolationLevel.Fetch(evnt.Value),
-//                        (SqlConnection)TransactionAfter.Connection.Fetch(evnt.Value),
-//                        (long)TransactionAfter.Timestamp.Fetch(evnt.Value));
-//
-//                    break;
-//                }
-//
-//                case SqlErrorCommitTransaction:
-//                case SqlErrorRollbackTransaction:
-//                {
-//                    var operationId = (Guid)TransactionError.OperationId.Fetch(evnt.Value);
-//
-//                    DependencyCollectorEventSource.Log.SqlClientDiagnosticSubscriberCallbackCalled(operationId, evnt.Key);
-//                    
-//                    this.OnErrorTransactionEvent(
-//                        operationId,
-//                        (string)TransactionError.Operation.Fetch(evnt.Value),
-//                        (IsolationLevel)TransactionError.IsolationLevel.Fetch(evnt.Value),
-//                        (SqlConnection)TransactionError.Connection.Fetch(evnt.Value),
-//                        (Exception)TransactionError.Exception.Fetch(evnt.Value),
-//                        (long)TransactionError.Timestamp.Fetch(evnt.Value));
-//
-//                    break;
-//                }
+                case CommandErrorEventId:
+                {
+                    var commandId = (Guid)CommandError.CommandId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(commandId, evnt.Key);
+                    
+                    this.OnCommandErrorEvent(
+                        commandId,
+                        (Exception)CommandError.Exception.Fetch(evnt.Value),
+                        (DateTimeOffset)CommandError.StartTime.Fetch(evnt.Value));
+
+                    break;
+                }
+
+                case ConnectionOpenedEventId:
+                {
+                    var connectionId = (Guid)ConnectionEnd.ConnectionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(connectionId, evnt.Key);
+                    
+                    this.OnConnectionEndEvent(
+                        connectionId,
+                        "Open",
+                        (DbConnection)ConnectionEnd.Connection.Fetch(evnt.Value),
+                        (DateTimeOffset)ConnectionEnd.StartTime.Fetch(evnt.Value),
+                        (TimeSpan)ConnectionEnd.Duration.Fetch(evnt.Value));
+
+                    break;
+                }
+                    
+                case ConnectionClosedEventId:
+                {
+                    var connectionId = (Guid)ConnectionEnd.ConnectionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(connectionId, evnt.Key);
+                    
+                    this.OnConnectionEndEvent(
+                        connectionId,
+                        "Close",
+                        (DbConnection)ConnectionEnd.Connection.Fetch(evnt.Value),
+                        (DateTimeOffset)ConnectionEnd.StartTime.Fetch(evnt.Value),
+                        (TimeSpan)ConnectionEnd.Duration.Fetch(evnt.Value));
+
+                    break;
+                }
+
+                case ConnectionErrorEventId:
+                {
+                    var connectionId = (Guid)ConnectionError.ConnectionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(connectionId, evnt.Key);
+                    
+                    this.OnConnectionErrorEvent(
+                        connectionId,
+                        (Exception)ConnectionError.Exception.Fetch(evnt.Value),
+                        (DateTimeOffset)ConnectionError.StartTime.Fetch(evnt.Value));
+
+                    break;
+                }
+
+                case TransactionCommittedEventId:
+                {
+                    var transactionId = (Guid)TransactionEnd.TransactionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(transactionId, evnt.Key);
+                    
+                    this.OnTransactionEndEvent(
+                        transactionId,
+                        "Commit",
+                        (DbTransaction)TransactionEnd.Transaction.Fetch(evnt.Value),
+                        (DateTimeOffset)TransactionEnd.StartTime.Fetch(evnt.Value),
+                        (TimeSpan)TransactionEnd.Duration.Fetch(evnt.Value));
+
+                    break;
+                }
+
+                case TransactionRolledBackEventId:
+                {
+                    var transactionId = (Guid)TransactionEnd.TransactionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(transactionId, evnt.Key);
+                    
+                    this.OnTransactionEndEvent(
+                        transactionId,
+                        "Rollback",
+                        (DbTransaction)TransactionEnd.Transaction.Fetch(evnt.Value),
+                        (DateTimeOffset)TransactionEnd.StartTime.Fetch(evnt.Value),
+                        (TimeSpan)TransactionEnd.Duration.Fetch(evnt.Value));
+
+                    break;
+                }
+
+                case TransactionErrorEventId:
+                {
+                    var transactionId = (Guid)TransactionError.TransactionId.Fetch(evnt.Value);
+
+                    DependencyCollectorEventSource.Log.EntityFrameworkCoreDiagnosticSubscriberCallbackCalled(transactionId, evnt.Key);
+                    
+                    this.OnTransactionErrorEvent(
+                        transactionId,
+                        (Exception)TransactionError.Exception.Fetch(evnt.Value),
+                        (DateTimeOffset)TransactionError.StartTime.Fetch(evnt.Value));
+
+                    break;
+                }
             }
         }
 
@@ -205,10 +215,7 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
 
         private void OnCommandExecutedEvent(
             Guid commandId,
-            string executeMethod,
-            Guid connectionId,
             DbCommand command,
-            bool @async,
             DateTimeOffset startTime,
             TimeSpan duration)
         {
@@ -236,7 +243,7 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
                 Target = target,
                 Data = command.CommandText,
                 Duration = duration,
-                Timestamp = DateTimeOffset.UtcNow - duration,
+                Timestamp = startTime,
                 Success = true
             };
 
@@ -245,125 +252,109 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
             this.client.Track(telemetry);
         }
 
-//        private void OnCommandErrorEvent(
-//            Guid operationId,
-//            string operation,
-//            Guid connectionId,
-//            Exception exception,
-//            long endTimestamp)
-//        {
-//            var duration = this.DeriveDuration(operationId, endTimestamp);
-//
-//            var telemetry = new ExceptionTelemetry(exception)
-//            {
-//                Message = exception.Message,
-//                Timestamp = DateTimeOffset.UtcNow - duration,
-//                SeverityLevel = SeverityLevel.Critical
-//            };
-//
-//            InitializeTelemetry(telemetry, operationId);
-//            CorrelateErrorTelemetry(telemetry, operationId);
-//
-//            this.client.Track(telemetry);
-//        }
-//
-//        private void OnAfterConnectionEvent(
-//            Guid operationId, 
-//            string operation,
-//            Guid connectionId,
-//            SqlConnection connection, 
-//            IDictionary statistics, 
-//            long endTimestamp)
-//        {
-//            var duration = this.DeriveDuration(operationId, endTimestamp);
-//            
-//            var telemetry = new DependencyTelemetry()
-//            {
-//                Id = operationId.ToString("N"),
-//                Name = string.Join(" | ", connection.DataSource, connection.Database, operation),
-//                Type = RemoteDependencyConstants.SQL,
-//                Target = string.Join(" | ", connection.DataSource, connection.Database),
-//                Data = operation,
-//                Duration = duration,
-//                Timestamp = DateTimeOffset.UtcNow - duration,
-//                Success = true
-//            };
-//
-//            InitializeTelemetry(telemetry, operationId);
-//
-//            this.client.Track(telemetry);
-//        }
-//
-//        private void OnErrorConnectionEvent(
-//            Guid operationId,
-//            string operation,
-//            Guid connectionId,
-//            Exception exception,
-//            long endTimestamp)
-//        {
-//            var duration = this.DeriveDuration(operationId, endTimestamp);
-//
-//            var telemetry = new ExceptionTelemetry(exception)
-//            {
-//                Message = exception.Message,
-//                Timestamp = DateTimeOffset.UtcNow - duration,
-//                SeverityLevel = SeverityLevel.Critical
-//            };
-//
-//            InitializeTelemetry(telemetry, operationId);
-//            CorrelateErrorTelemetry(telemetry, operationId);
-//
-//            this.client.Track(telemetry);
-//        }
-//
-//        private void OnAfterTransactionEvent(
-//            Guid operationId,
-//            string operation,
-//            IsolationLevel isolationLevel,
-//            SqlConnection connection,
-//            long endTimestamp)
-//        {
-//            var duration = this.DeriveDuration(operationId, endTimestamp);
-//
-//            var telemetry = new DependencyTelemetry()
-//            {
-//                Id = operationId.ToString("N"),
-//                Name = string.Join(" | ", connection.DataSource, connection.Database, operation, isolationLevel),
-//                Type = RemoteDependencyConstants.SQL,
-//                Target = string.Join(" | ", connection.DataSource, connection.Database),
-//                Data = operation,
-//                Duration = duration,
-//                Timestamp = DateTimeOffset.UtcNow - duration,
-//                Success = true
-//            };
-//
-//            InitializeTelemetry(telemetry, operationId);
-//
-//            this.client.Track(telemetry);
-//        }
-//
-//        private void OnErrorTransactionEvent(
-//            Guid operationId,
-//            string operation,
-//            IsolationLevel isolationLevel,
-//            SqlConnection connection,
-//            Exception exception,
-//            long endTimestamp)
-//        {
-//            var duration = this.DeriveDuration(operationId, endTimestamp);
-//
-//            var telemetry = new ExceptionTelemetry(exception)
-//            {
-//                Message = exception.Message,
-//                Timestamp = DateTimeOffset.UtcNow - duration,
-//                SeverityLevel = SeverityLevel.Critical
-//            };
-//
-//            InitializeTelemetry(telemetry, operationId);
-//            CorrelateErrorTelemetry(telemetry, operationId);
-//
-//            this.client.Track(telemetry);
-//        }
+        private void OnCommandErrorEvent(
+            Guid commandId,
+            Exception exception,
+            DateTimeOffset startTime)
+        {
+            var telemetry = new ExceptionTelemetry(exception)
+            {
+                Message = exception.Message,
+                Timestamp = startTime,
+                SeverityLevel = SeverityLevel.Critical
+            };
+
+            InitializeTelemetry(telemetry, commandId);
+            CorrelateErrorTelemetry(telemetry, commandId);
+
+            this.client.Track(telemetry);
+        }
+
+        private void OnConnectionEndEvent(
+            Guid connectionId,
+            string operation,
+            DbConnection connection,
+            DateTimeOffset startTime,
+            TimeSpan duration)
+        {
+            var telemetry = new DependencyTelemetry()
+            {
+                Id = connectionId.ToString("N"),
+                Name = string.Join(" | ", connection.DataSource, connection.Database, operation),
+                Type = RemoteDependencyConstants.SQL,
+                Target = string.Join(" | ", connection.DataSource, connection.Database),
+                Data = operation,
+                Duration = duration,
+                Timestamp = startTime,
+                Success = true
+            };
+
+            InitializeTelemetry(telemetry, connectionId);
+
+            this.client.Track(telemetry);
+        }
+
+        private void OnConnectionErrorEvent(
+            Guid connectionId,
+            Exception exception,
+            DateTimeOffset startTime)
+        {
+            var telemetry = new ExceptionTelemetry(exception)
+            {
+                Message = exception.Message,
+                Timestamp = startTime,
+                SeverityLevel = SeverityLevel.Critical
+            };
+
+            InitializeTelemetry(telemetry, connectionId);
+            CorrelateErrorTelemetry(telemetry, connectionId);
+
+            this.client.Track(telemetry);
+        }
+
+        private void OnTransactionEndEvent(
+            Guid transactionId,
+            string operation,
+            DbTransaction transaction,
+            DateTimeOffset startTime,
+            TimeSpan duration)
+        {
+            var connection = transaction.Connection;
+            
+            var telemetry = new DependencyTelemetry()
+            {
+                Id = transactionId.ToString("N"),
+                Name = string.Join(" | ", connection.DataSource, connection.Database, operation, transaction.IsolationLevel),
+                Type = RemoteDependencyConstants.SQL,
+                Target = string.Join(" | ", connection.DataSource, connection.Database),
+                Data = operation,
+                Duration = duration,
+                Timestamp = startTime,
+                Success = true
+            };
+
+            InitializeTelemetry(telemetry, transactionId);
+
+            this.client.Track(telemetry);
+        }
+
+        private void OnTransactionErrorEvent(
+            Guid transactionId,
+            Exception exception,
+            DateTimeOffset startTime)
+        {
+            var telemetry = new ExceptionTelemetry(exception)
+            {
+                Message = exception.Message,
+                Timestamp = startTime,
+                SeverityLevel = SeverityLevel.Critical
+            };
+
+            InitializeTelemetry(telemetry, transactionId);
+            CorrelateErrorTelemetry(telemetry, transactionId);
+
+            this.client.Track(telemetry);
+        }
 
         #region Fetchers
         
@@ -371,65 +362,54 @@ namespace Microsoft.ApplicationInsights.DependencyCollector.Implementation
         private static class CommandExecuted
         {
             public static readonly PropertyFetcher CommandId = new PropertyFetcher(nameof(CommandId));
-            public static readonly PropertyFetcher ExecuteMethod = new PropertyFetcher(nameof(ExecuteMethod));
-            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
             public static readonly PropertyFetcher Command = new PropertyFetcher(nameof(Command));
-            public static readonly PropertyFetcher IsAsync = new PropertyFetcher(nameof(IsAsync));
             public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
             public static readonly PropertyFetcher Duration = new PropertyFetcher(nameof(Duration));
         }
 
-//        // Fetchers for execute command error event
-//        private static class CommandError
-//        {
-//            public static readonly PropertyFetcher OperationId = new PropertyFetcher(nameof(OperationId));
-//            public static readonly PropertyFetcher Operation = new PropertyFetcher(nameof(Operation));
-//            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
-//            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
-//            public static readonly PropertyFetcher Timestamp = new PropertyFetcher(nameof(Timestamp));
-//        }
-//
-//        // Fetchers for connection open/close after events
-//        private static class ConnectionAfter
-//        {
-//            public static readonly PropertyFetcher OperationId = new PropertyFetcher(nameof(OperationId));
-//            public static readonly PropertyFetcher Operation = new PropertyFetcher(nameof(Operation));
-//            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
-//            public static readonly PropertyFetcher Connection = new PropertyFetcher(nameof(Connection));
-//            public static readonly PropertyFetcher Statistics = new PropertyFetcher(nameof(Statistics));
-//            public static readonly PropertyFetcher Timestamp = new PropertyFetcher(nameof(Timestamp));
-//        }
-//
-//        // Fetchers for connection open/close error events
-//        private static class ConnectionError
-//        {
-//            public static readonly PropertyFetcher OperationId = new PropertyFetcher(nameof(OperationId));
-//            public static readonly PropertyFetcher Operation = new PropertyFetcher(nameof(Operation));
-//            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
-//            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
-//            public static readonly PropertyFetcher Timestamp = new PropertyFetcher(nameof(Timestamp));
-//        }
-//
-//        // Fetchers for transaction commit/rollback after events
-//        private static class TransactionAfter
-//        {
-//            public static readonly PropertyFetcher OperationId = new PropertyFetcher(nameof(OperationId));
-//            public static readonly PropertyFetcher Operation = new PropertyFetcher(nameof(Operation));
-//            public static readonly PropertyFetcher IsolationLevel = new PropertyFetcher(nameof(IsolationLevel));
-//            public static readonly PropertyFetcher Connection = new PropertyFetcher(nameof(Connection));
-//            public static readonly PropertyFetcher Timestamp = new PropertyFetcher(nameof(Timestamp));
-//        }
-//
-//        // Fetchers for transaction commit/rollback error events
-//        private static class TransactionError
-//        {
-//            public static readonly PropertyFetcher OperationId = new PropertyFetcher(nameof(OperationId));
-//            public static readonly PropertyFetcher Operation = new PropertyFetcher(nameof(Operation));
-//            public static readonly PropertyFetcher IsolationLevel = new PropertyFetcher(nameof(IsolationLevel));
-//            public static readonly PropertyFetcher Connection = new PropertyFetcher(nameof(Connection));
-//            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
-//            public static readonly PropertyFetcher Timestamp = new PropertyFetcher(nameof(Timestamp));
-//        }
+        // Fetchers for execute command error event
+        private static class CommandError
+        {
+            public static readonly PropertyFetcher CommandId = new PropertyFetcher(nameof(CommandId));
+            public static readonly PropertyFetcher Command = new PropertyFetcher(nameof(Command));
+            public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
+            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
+        }
+
+        // Fetchers for connection open/close after events
+        private static class ConnectionEnd
+        {
+            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
+            public static readonly PropertyFetcher Connection = new PropertyFetcher(nameof(Connection));
+            public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
+            public static readonly PropertyFetcher Duration = new PropertyFetcher(nameof(Duration));
+        }
+
+        // Fetchers for connection open/close error events
+        private static class ConnectionError
+        {
+            public static readonly PropertyFetcher ConnectionId = new PropertyFetcher(nameof(ConnectionId));
+            public static readonly PropertyFetcher Connection = new PropertyFetcher(nameof(Connection));
+            public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
+            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
+        }
+
+        // Fetchers for transaction commit/rollback after events
+        private static class TransactionEnd
+        {
+            public static readonly PropertyFetcher TransactionId = new PropertyFetcher(nameof(TransactionId));
+            public static readonly PropertyFetcher Transaction = new PropertyFetcher(nameof(Transaction));
+            public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
+            public static readonly PropertyFetcher Duration = new PropertyFetcher(nameof(Duration));
+        }
+
+        // Fetchers for transaction commit/rollback error events
+        private static class TransactionError
+        {
+            public static readonly PropertyFetcher TransactionId = new PropertyFetcher(nameof(TransactionId));
+            public static readonly PropertyFetcher StartTime = new PropertyFetcher(nameof(StartTime));
+            public static readonly PropertyFetcher Exception = new PropertyFetcher(nameof(Exception));
+        }
 
         #endregion
 
