@@ -14,13 +14,14 @@ namespace Microsoft.ApplicationInsights.Tests
     using Microsoft.ApplicationInsights.DependencyCollector.Implementation;
     using Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
     using System.Reflection;
+    using System.Threading.Tasks;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
     [TestClass]
     public class SqlClientDiagnosticSourceListenerTests
     {
-        private const string TestConnectionString = "Data Source=(localdb)\\MSSQLLocalDB;Database=master";
+        private const string TestConnectionString = "Data Source=(localdb)\\MSSQLLocalDB;Database=RDDTestDatabase";
         
         private IList<ITelemetry> sendItems;
         private StubTelemetryChannel stubTelemetryChannel;
@@ -51,6 +52,36 @@ namespace Microsoft.ApplicationInsights.Tests
             this.fakeSqlClientDiagnosticSource.Dispose();
             this.configuration.Dispose();
             this.stubTelemetryChannel.Dispose();
+        }
+
+        [TestMethod]
+        public async Task ConnectionOpenFailed_IntegrationTest()
+        {
+            using (var connection = new SqlConnection("Data Source=(localdb)\\MSSQLLocalDB;Database=RDDTestDatabase;Integrated Security=True"))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "WAITFOR DELAY '00:00:00:006'; select * from dbo.Messages";
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            // Process each column as appropriate
+                            object obj = await reader.GetFieldValueAsync<object>(i);
+                        }
+                    }
+                }
+            }
+
+            var now = DateTimeOffset.UtcNow;
+
+            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+
+            Assert.IsTrue(Guid.TryParse(dependencyTelemetry.Id, out var operationId));
+            Assert.IsTrue(dependencyTelemetry.Success.Value);
         }
 
         [TestMethod]

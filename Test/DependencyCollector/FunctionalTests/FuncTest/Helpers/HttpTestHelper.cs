@@ -99,6 +99,39 @@ namespace FuncTest.Helpers
                 });
         }
 
+        /// <summary>
+        /// Helper to execute Sync SQL tests
+        /// </summary>
+        /// <param name="testWebApplication">The test application for which tests are to be executed</param>
+        /// <param name="success">indicates if the tests should test success or failure case</param>   
+        /// <param name="count">number to RDD calls to be made by the test application.  </param> 
+        /// <param name="accessTimeMax">approximate maximum time taken by RDD Call.  </param> 
+        public static void ExecuteSyncSqlTests(TestWebApplication testWebApplication, bool success, int count, TimeSpan accessTimeMax,
+            string resultCodeExpected, string queryString)
+        {
+            testWebApplication.DoTest(
+                application =>
+                {
+                    var resourceNameExpected = success ? ResourceNameHttpToBing : ResourceNameHttpToFailedRequest;
+                    application.ExecuteAnonymousRequest(queryString + count);
+
+                    //// The above request would have trigged RDD module to monitor and create RDD telemetry
+                    //// Listen in the fake endpoint and see if the RDDTelemtry is captured
+                    var allItems = DeploymentAndValidationTools.SdkEventListener.ReceiveAllItemsDuringTimeOfType<TelemetryItem<RemoteDependencyData>>(DeploymentAndValidationTools.SleepTimeForSdkToSendEvents);
+                    var httpItems = allItems.Where(i => i.data.baseData.type == "SQL").ToArray();
+
+                    Assert.AreEqual(
+                        count,
+                        httpItems.Length,
+                        "Total Count of Remote Dependency items for HTTP collected is wrong.");
+
+                    foreach (var httpItem in httpItems)
+                    {
+                        Validate(httpItem, resourceNameExpected, accessTimeMax, success, "(localdb)\\MSSQLLocalDB | RDDTestDatabase", resultCodeExpected);
+                    }
+                });
+        }
+
         public static void ExecuteSyncHttpClientTests(TestWebApplication testWebApplication, TimeSpan accessTimeMax, string resultCodeExpected)
         {
             testWebApplication.DoTest(

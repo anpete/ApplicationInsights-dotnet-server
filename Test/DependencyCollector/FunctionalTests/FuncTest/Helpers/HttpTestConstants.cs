@@ -93,6 +93,11 @@ namespace FuncTest.Helpers
         /// <c>http://msdn.microsoft.com/en-us/library/ms228972(v=vs.110).aspx</c>
         /// </summary>
         internal static string QueryStringOutboundHttpAsyncAwait1Failed = "?type=failedhttpasyncawait1&count=";
+        
+        /// <summary>
+        /// Query string to specify Outbound SQL Call .
+        /// </summary>
+        internal static string QueryStringOutboundExecuteReaderAsync = "?type=ExecuteReaderAsync&success=true&count=";
 
         /// <summary>
         /// Maximum access time for the initial call - This includes an additional 1-2 delay introduced before the very first call by Profiler V2.

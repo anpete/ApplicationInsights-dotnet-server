@@ -47,6 +47,10 @@ namespace AspxCore.Controllers
                     title = "Made failing Sync GET HTTP call to bing";
                     response = MakeHttpCallSyncFailed(count);
                     break;
+                case "sql":
+                    title = "Made Sync SQL call to SQL Server";
+                    response = MakeSqlCallSync(count);
+                    break;
                 default:
                     title = $"Unrecognized request type '{type}'";
                     response = "";
@@ -117,6 +121,25 @@ namespace AspxCore.Controllers
                     result += "Exception occured (as expected):" + e;
                 }
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Make sync SQLcalls
+        /// </summary>        
+        /// <param name="count">no of SQL calls to be made</param>        
+        /// <param name="hostname">the GET call will be made to http://www.hostname.com</param>        
+        private static string MakeSqlCallSync(int count)
+        {
+            string result = "";
+
+//            Uri ourUri = new Uri(string.Format("https://www.{0}.com", hostname));
+//            HttpClient client = new HttpClient();
+//            for (int i = 0; i < count; i++)
+//            {
+//                result += $"Request {i + 1}:<BR/>{client.GetStringAsync(ourUri).Result}<BR/>";
+//            }
 
             return result;
         }
