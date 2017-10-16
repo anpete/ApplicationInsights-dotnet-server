@@ -151,6 +151,19 @@
             }
         }
 
+        [TestMethod]
+        [TestCategory(TestCategory.NetCore20)]
+        [DeploymentItem(AspxCoreTestAppFolder, AspxCoreAppFolder)]
+        public void TestRddForSyncSqlAspxCore()
+        {
+            using (DotNetCoreTestSetup())
+            {
+                // Execute and verify calls which succeeds            
+                HttpTestHelper.ExecuteSyncSqlTests(
+                    AspxCoreTestWebApplication, true, 1, HttpTestConstants.AccessTimeMaxHttpNormal, HttpTestConstants.QueryStringOutboundExecuteReaderAsync);
+            }
+        }
+
         #endregion        
 
         private class ExpectedSDKPrefixChanger : IDisposable

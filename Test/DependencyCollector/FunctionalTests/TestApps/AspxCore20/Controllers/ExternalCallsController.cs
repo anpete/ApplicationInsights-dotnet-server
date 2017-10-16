@@ -1,5 +1,7 @@
+using FW45Shared;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Text;
 
@@ -11,6 +13,32 @@ namespace AspxCore20.Controllers
      /// Invalid Hostname to trigger exception being thrown
      /// </summary>
         private const string InvalidHostName = "http://www.zzkaodkoakdahdjghejajdnad.com";
+
+        /// <summary>
+        /// Connection string to APM Development database.
+        /// </summary> 
+        private const string ConnectionString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=RDDTestDatabase;Integrated Security=True";
+
+        /// <summary>
+        /// Valid SQL Query. The wait for delay of 6 ms is used to prevent access time of less than 1 ms. SQL is not accurate below 3, so used 6 ms delay.
+        /// </summary> 
+        [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
+        private const string ValidSqlQueryToApmDatabase = "WAITFOR DELAY '00:00:00:006'; select * from dbo.Messages";
+
+        /// <summary>
+        /// Valid SQL Query to get count.
+        /// </summary> 
+        private const string ValidSqlQueryCountToApmDatabase = "WAITFOR DELAY '00:00:00:006'; SELECT count(*) FROM dbo.Messages";
+
+        /// <summary>
+        /// Invalid SQL Query.
+        /// </summary> 
+        private const string InvalidSqlQueryToApmDatabase = "SELECT TOP 2 * FROM apm.[Database1212121]";
+
+        /// <summary>
+        /// Label used to identify the query being executed.
+        /// </summary> 
+        private const string QueryToExecuteLabel = "Query Executed:";
 
         private string GetQueryValue(string valueKey)
         {
@@ -26,6 +54,9 @@ namespace AspxCore20.Controllers
 
             string type = GetQueryValue("type");
             string countStr = GetQueryValue("count");
+
+            bool.TryParse(GetQueryValue("success"), out var success);
+            string sqlQueryTouse = (success == true) ? ValidSqlQueryToApmDatabase : InvalidSqlQueryToApmDatabase;
 
             int count;
             if (!int.TryParse(countStr, out count))
@@ -46,6 +77,11 @@ namespace AspxCore20.Controllers
                 case "failedhttp":
                     title = "Made failing Sync GET HTTP call to bing";
                     response = MakeHttpCallSyncFailed(count);
+                    break;
+                case "ExecuteReaderAsync":
+                    SqlCommandHelper.ExecuteReaderAsync(ConnectionString, sqlQueryTouse);
+                    //MakeHttpGetCallSync(count, "bing");
+                    response = QueryToExecuteLabel + sqlQueryTouse;
                     break;
                 default:
                     title = $"Unrecognized request type '{type}'";

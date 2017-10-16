@@ -42,6 +42,7 @@
             await ExecuteReaderAsyncInternal(connectionString, commandText, commandType);
         }
 
+#if !NETCOREAPP2_0
         public static void BeginExecuteReader(string connectionString, string commandText, int numberOfAsyncArgs)
         {
             ManualResetEvent mre = new ManualResetEvent(false);
@@ -67,6 +68,7 @@
             executor.BeginExecute();
             mre.WaitOne(1000);
         }
+#endif
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
         public static void AsyncExecuteReaderInTasks(string connectionString, string commandText)
@@ -115,15 +117,16 @@
             }
         }
 
-        #endregion
+#endregion
 
-        #region ExecuteNonQuery
+#region ExecuteNonQuery
         
         public static async void ExecuteNonQueryAsync(string connectionString, string commandText)
         {
             await ExecuteNonQueryAsyncInternal(connectionString, commandText);
         }
 
+#if !NETCOREAPP2_0
         public static void BeginExecuteNonQuery(string connectionString, string commandText, int numberOfArgs)
         {
             ManualResetEvent mre = new ManualResetEvent(false);
@@ -144,8 +147,9 @@
                 command.ExecuteNonQuery();
             }
         }
+#endif
 
-        #endregion
+#endregion
 
         #region ExecuteScalar
         public static async void ExecuteScalarAsync(string connectionString, string commandText)
@@ -166,15 +170,16 @@
             }
         }
 
-        #endregion
+#endregion
 
-        #region ExecuteXmlReader
+#region ExecuteXmlReader
 
         public static async void ExecuteXmlReaderAsync(string connectionString, string commandText)
         {
             await ExecuteXmlReaderAsyncInternal(connectionString, commandText);
         }
 
+#if !NETCOREAPP2_0
         public static void BeginExecuteXmlReader(string connectionString, string commandText)
         {
             ManualResetEvent mre = new ManualResetEvent(false);
@@ -197,8 +202,9 @@
                 }
             }    
         }
+#endif
 
-        #endregion
+#endregion
 
         private async static Task ExecuteReaderAsyncInternal(string connectionString, string commandText, CommandType commandType)
         {
@@ -261,6 +267,7 @@
             }
         }
 
+#if !NETCOREAPP2_0
         private sealed class AsyncExecuteReaderWrapper : IDisposable
         {
             private readonly SqlCommand command;
@@ -586,5 +593,6 @@
                 }
             }          
         }
+#endif
     }
 }

@@ -25,6 +25,17 @@ namespace FuncTest.Helpers
         internal static Uri ResourceNameHttpToFailedAtDnsRequest = new Uri("https://abcdefzzzzeeeeadadad.com");
 
         /// <summary>
+        /// Resource Name for dev database.
+        /// </summary>
+        private const string ResourceNameSQLToDevApm = @".\SQLEXPRESS | RDDTestDatabase";
+
+        /// <summary>
+        /// Invalid SQL query only needed here because the test web app we use to run queries will throw a 500 and we can't get back the invalid query from it.
+        /// </summary>        
+        private const string InvalidSqlQueryToApmDatabase = "SELECT TOP 2 * FROM apm.[Database1212121]";
+
+
+        /// <summary>
         /// Helper to execute Async Http tests.
         /// </summary>
         /// <param name="testWebApplication">The test application for which tests are to be executed.</param>
@@ -281,6 +292,85 @@ namespace FuncTest.Helpers
             }
 
             DeploymentAndValidationTools.Validate(itemToValidate, accessTimeMax, successFlagExpected, resultCodeExpected);
-        }        
+        }
+
+        /// <summary>
+        /// Helper to execute Sync SQL tests
+        /// </summary>
+        /// <param name="testWebApplication">The test application for which tests are to be executed</param>
+        /// <param name="success">indicates if the tests should test success or failure case</param>   
+        /// <param name="count">number to RDD calls to be made by the test application.  </param> 
+        /// <param name="accessTimeMax">approximate maximum time taken by RDD Call.  </param> 
+        public static void ExecuteSyncSqlTests(
+            TestWebApplication testWebApplication, bool success, int count, TimeSpan accessTimeMax, string queryString)
+        {
+            testWebApplication.DoTest(
+                application =>
+                {
+                    var resourceNameExpected = success ? ResourceNameHttpToBing : ResourceNameHttpToFailedRequest;
+                    application.ExecuteAnonymousRequest(queryString + count);
+
+                    //// The above request would have trigged RDD module to monitor and create RDD telemetry
+                    //// Listen in the fake endpoint and see if the RDDTelemtry is captured
+                    var allItems = DeploymentAndValidationTools.SdkEventListener.ReceiveAllItemsDuringTimeOfType<TelemetryItem<RemoteDependencyData>>(DeploymentAndValidationTools.SleepTimeForSdkToSendEvents);
+                    var sqlItems = allItems.Where(i => i.data.baseData.type == "SQL").ToArray();
+
+                    Assert.AreEqual(
+                        count,
+                        sqlItems.Length,
+                        "Total Count of Remote Dependency items for HTTP collected is wrong.");
+
+                    string queryToValidate = success ? string.Empty : InvalidSqlQueryToApmDatabase;// + extraClauseForFailureCase;
+
+                    foreach (var sqlItem in sqlItems)
+                    {
+                        Validate(
+                            sqlItem,
+                            ResourceNameSQLToDevApm,
+                            queryToValidate,
+                            TimeSpan.FromSeconds(20),
+                            successFlagExpected: success,
+                            sqlErrorCodeExpected: string.Empty,
+                            sqlErrorMessageExpected: null);
+                    }
+                });
+        }
+
+        private static void Validate(TelemetryItem<RemoteDependencyData> itemToValidate,
+            string targetExpected,
+            string commandNameExpected,
+            TimeSpan accessTimeMax,
+            bool successFlagExpected,
+            string sqlErrorCodeExpected,
+            string sqlErrorMessageExpected)
+        {
+            // For http name is validated in test itself
+            Assert.IsTrue(itemToValidate.data.baseData.target.Contains(targetExpected),
+                "The remote dependancy target is incorrect. Expected: " + targetExpected +
+                ". Collected: " + itemToValidate.data.baseData.target);
+
+            Assert.AreEqual(sqlErrorCodeExpected, itemToValidate.data.baseData.resultCode);
+
+            //If the command name is expected to be empty, the deserializer will make the CommandName null
+            if ("rddp" == DeploymentAndValidationTools.ExpectedSqlSDKPrefix)
+            {
+                // Additional checks for profiler collection
+                if (!string.IsNullOrEmpty(sqlErrorMessageExpected))
+                {
+                    Assert.AreEqual(sqlErrorMessageExpected, itemToValidate.data.baseData.properties["ErrorMessage"]);
+                }
+
+                if (string.IsNullOrEmpty(commandNameExpected))
+                {
+                    Assert.IsNull(itemToValidate.data.baseData.data);
+                }
+                else
+                {
+                    Assert.IsTrue(itemToValidate.data.baseData.data.Equals(commandNameExpected), "The command name is incorrect");
+                }
+            }
+
+            DeploymentAndValidationTools.Validate(itemToValidate, accessTimeMax, successFlagExpected, sqlErrorCodeExpected);
+        }
     }
 }

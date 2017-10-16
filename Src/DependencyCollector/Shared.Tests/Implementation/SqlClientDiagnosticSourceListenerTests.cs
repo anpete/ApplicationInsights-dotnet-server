@@ -6,6 +6,7 @@ namespace Microsoft.ApplicationInsights.Tests
     using System.Data.SqlClient;
     using System.Diagnostics;
     using System.Linq;
+    using System.Reflection;
 
     using Microsoft.ApplicationInsights.Channel;
     using Microsoft.ApplicationInsights.DataContracts;
@@ -13,7 +14,6 @@ namespace Microsoft.ApplicationInsights.Tests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.ApplicationInsights.DependencyCollector.Implementation;
     using Microsoft.ApplicationInsights.Extensibility.Implementation.Tracing;
-    using System.Reflection;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -52,6 +52,36 @@ namespace Microsoft.ApplicationInsights.Tests
             this.configuration.Dispose();
             this.stubTelemetryChannel.Dispose();
         }
+
+//        [TestMethod]
+//        public async Task ConnectionOpenFailed_IntegrationTest()
+//        {
+//            using (var connection = new SqlConnection("Data Source=(localdb)\\MSSQLLocalDB;Database=RDDTestDatabase;Integrated Security=True"))
+//            {
+//                connection.Open();
+//                var command = connection.CreateCommand();
+//                command.CommandText = "WAITFOR DELAY '00:00:00:006'; select * from dbo.Messages";
+//
+//                using (var reader = await command.ExecuteReaderAsync())
+//                {
+//                    while (await reader.ReadAsync())
+//                    {
+//                        for (int i = 0; i < reader.FieldCount; i++)
+//                        {
+//                            // Process each column as appropriate
+//                            object obj = await reader.GetFieldValueAsync<object>(i);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            var now = DateTimeOffset.UtcNow;
+//
+//            var dependencyTelemetry = (DependencyTelemetry)this.sendItems.Single();
+//
+//            Assert.IsTrue(Guid.TryParse(dependencyTelemetry.Id, out var operationId));
+//            Assert.IsTrue(dependencyTelemetry.Success.Value);
+//        }
 
         [TestMethod]
         public void InitializesTelemetryFromParentActivity()
